@@ -47,6 +47,10 @@ as evaluated qualitatively and quantitatively on public datasets.
 *Comparisons of novel view rendering on public datasets. At some challenging
 viewpoints having bigger differences in translation and orientation motions compared
 with training views, 3DGS and LightGS have issues with photorealistic rendering.*
+## Future Plans: 
+- [ ] **private data generation supporting**
+      
+ We will try to find a better way to help researchers easily generate their private data. For example, running PlanarSLAM (ManhattanSLAM, ORBSLAM) in python. If anyone is interested in contributing to this open source project, please contact me @ yanyan.li.camp@gmail.com
 
 ## 📋 TODO Lists
 - [x] *Repo* - Create repo for [GeoGaussian](https://github.com/yanyan-li/GeoGaussian).
