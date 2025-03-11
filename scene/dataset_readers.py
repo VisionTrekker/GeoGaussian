@@ -33,9 +33,8 @@ class CameraInfo(NamedTuple):
     T: np.array
     FovY: np.array
     FovX: np.array
-    image: np.array
-    image_depth: np.array
     image_path: str
+    depth_path: str
     image_name: str
     width: int
     height: int
@@ -91,7 +90,7 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder):
         T_w_c = - R_w_c @ T
         T_c_w = - R_c_w @ T_w_c
 
-        if intr.model=="SIMPLE_PINHOLE":
+        if intr.model=="SIMPLE_PINHOLE" or intr.model=="SIMPLE_RADIAL":
             focal_length_x = intr.params[0]
             FovY = focal2fov(focal_length_x, height)
             FovX = focal2fov(focal_length_x, width)
@@ -104,16 +103,24 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder):
             assert False, "Colmap camera model not handled: only undistorted datasets (PINHOLE or SIMPLE_PINHOLE cameras) supported!"
 
         image_path = os.path.join(images_folder, os.path.basename(extr.name))
+        if not os.path.exists(image_path):
+            continue
+
         depth_path = os.path.join(images_folder, 'depths', os.path.basename(extr.name
                                                                             .replace('frame', 'depth')
                                                                             .replace('jpg', 'png')))
         image_name = os.path.basename(image_path).split(".")[0]
         image = Image.open(image_path)
+        width, height = image.size
         # image_depth = Image.fromarray((np.array(Image.open(depth_path))/6553.5).astype(np.float32), mode='F')
         # plt.imshow(np.array(image_depth), cmap='magma')
-        cam_info = CameraInfo(uid=uid, R=R, T=T_c_w, FovY=FovY, FovX=FovX, image=image, image_depth=image,
-                              image_path=image_path, image_name=image_name, width=width, height=height)
+        cam_info = CameraInfo(uid=uid, R=R, T=T_c_w, FovY=FovY, FovX=FovX,
+                              image_path=image_path, depth_path=depth_path, image_name=image_name, width=width, height=height)
         cam_infos.append(cam_info)
+
+        # release memory
+        image.close()
+        image = None
     sys.stdout.write('\n')
     return cam_infos
 

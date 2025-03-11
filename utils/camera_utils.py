@@ -13,11 +13,14 @@ from scene.cameras import Camera
 import numpy as np
 from utils.general_utils import PILtoTorch, PILtoTorch_d
 from utils.graphics_utils import fov2focal
+import sys
+from PIL import Image
 
 WARNED = False
 
 def loadCam(args, id, cam_info, resolution_scale):
-    orig_w, orig_h = cam_info.image.size
+    orig_w = cam_info.width
+    orig_h = cam_info.height
 
     if args.resolution in [1, 2, 4, 8]:
         resolution = round(orig_w/(resolution_scale * args.resolution)), round(orig_h/(resolution_scale * args.resolution))
@@ -38,14 +41,18 @@ def loadCam(args, id, cam_info, resolution_scale):
         scale = float(global_down) * float(resolution_scale)
         resolution = (int(orig_w / scale), int(orig_h / scale))
 
-    resized_image_rgb = PILtoTorch(cam_info.image, resolution)
-    resized_image_d = PILtoTorch_d(cam_info.image_depth, resolution)
+    image = Image.open(cam_info.image_path)
+    resized_image_rgb = PILtoTorch(image, resolution)
+    resized_image_d = PILtoTorch_d(image, resolution)
 
     gt_image = resized_image_rgb[:3, ...]
     loaded_mask = None
 
     if resized_image_rgb.shape[1] == 4:
         loaded_mask = resized_image_rgb[3:4, ...]
+
+    image.close()
+    image = None
 
     return Camera(colmap_id=cam_info.uid, R=cam_info.R, T=cam_info.T, 
                   FoVx=cam_info.FovX, FoVy=cam_info.FovY, 
@@ -57,7 +64,12 @@ def cameraList_from_camInfos(cam_infos, resolution_scale, args):
     camera_list = []
 
     for id, c in enumerate(cam_infos):
+        sys.stdout.write('\r')
+        sys.stdout.write("\tReading camera {}/{}".format(id + 1, len(cam_infos)))
+        sys.stdout.flush()
+
         camera_list.append(loadCam(args, id, c, resolution_scale))
+    sys.stdout.write('\n')
 
     return camera_list
 

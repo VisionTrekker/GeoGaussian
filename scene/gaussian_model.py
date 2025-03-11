@@ -215,17 +215,16 @@ class GaussianModel:
         features[:, 3:, 1:] = 0.0
 
         print("Number of points at initialisation : ", fused_point_cloud.shape[0])
-
+        # 原方式：高斯缩放因子的3个轴的长度都设为 每个点云距K个最近邻地平均距离，最短为0.0000001
         # dist2 = torch.clamp_min(distCUDA2(torch.from_numpy(np.asarray(pcd.points)).float().cuda()), 0.0000001)
         # scales = torch.log(torch.sqrt(dist2))[...,None].repeat(1, 3)
         # rots = torch.zeros((fused_point_cloud.shape[0], 4), device="cuda")
         # rots[:, 0] = 1
 
 
-        # 初始化主轴为xy轴，且长度为最近邻2倍
+        # 现方式：初始化主轴为xy轴，且长度为最近邻2倍
         dist2 = torch.clamp(distCUDA2(torch.from_numpy(np.asarray(pcd.points)).float().cuda()), 0.0000001, 0.01)
-
-        scales = torch.sqrt(dist2 / 2)[..., None]
+        scales = torch.sqrt(dist2 / 2)[..., None]   # (N,)
         zero = torch.full_like(scales, 1e-3)
         scales = torch.log(torch.concat([scales, scales, zero], dim=1))
 
